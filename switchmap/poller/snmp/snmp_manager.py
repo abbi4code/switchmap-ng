@@ -42,6 +42,9 @@ class Validate:
         # Initialize key variables
         cache_exists = False
 
+        #! so here we are caching those SNMP_groups from the config file, so we have to take them for every device, as for every device we need to creds to authenticate
+        #! instead we store them in cache, if cache not found only then we go back to config and get back those creds
+
         # Create cache directory / file if not yet created
         filename = files.snmp_file(self._options.hostname, ConfigPoller())
         if os.path.exists(filename) is True:
@@ -317,8 +320,8 @@ class Interact:
             oid_to_get,
             get=False,
             check_reachability=True,
-            context_name=context_name,
             check_existence=True,
+            context_name=context_name,
         )
 
         # If we get no result, then override validity
@@ -503,7 +506,7 @@ class Interact:
                 if self._poll.authorization.version != 1:
                     # Bulkwalk for SNMPv2 and SNMPv3
                     results = session.bulkwalk(
-                        oid_to_get, non_repeaters=0, max_repetitions=25
+                        oid_to_get, non_repeaters=0, max_repetitions=5
                     )
                 else:
                     # Bulkwalk not supported in SNMPv1
@@ -626,6 +629,8 @@ class _Session:
                 remote_port=self._poll.authorization.port,
                 use_numeric=True,
                 context=self._context_name,
+                timeout=0.5,
+                retries=1,
             )
         else:
             session = easysnmp.Session(
@@ -640,6 +645,8 @@ class _Session:
                 privacy_password=self._poll.authorization.privpassword,
                 auth_protocol=self._auth_protocol(),
                 auth_password=self._poll.authorization.authpassword,
+                timeout=0.5,
+                retries=1,
             )
 
         # Return

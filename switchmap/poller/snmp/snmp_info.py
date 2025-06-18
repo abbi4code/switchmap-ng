@@ -30,6 +30,7 @@ class Query:
         """
         # Define query object
         self.snmp_object = snmp_object
+        print(f"🔧 [SNMP_INFO.PY] Created Query object for {snmp_object.hostname()}")
 
     def everything(self):
         """Get all information from device.
@@ -43,13 +44,28 @@ class Query:
         """
         # Initialize key variables
         data = {}
+        hostname = self.snmp_object.hostname()
+
+        print(f"🌟 [SNMP_INFO.PY] Starting everything() for {hostname}")
 
         # Append data
+        print(f"📋 [SNMP_INFO.PY] Gathering misc data for {hostname}")
         data["misc"] = self.misc()
+        
+        print(f"📊 [SNMP_INFO.PY] Gathering layer1 data for {hostname}")
         data["layer1"] = self.layer1()
+        
+        print(f"🔗 [SNMP_INFO.PY] Gathering layer2 data for {hostname}")
         data["layer2"] = self.layer2()
+        
+        print(f"🌐 [SNMP_INFO.PY] Gathering layer3 data for {hostname}")
         data["layer3"] = self.layer3()
+        
+        print(f"🖥️  [SNMP_INFO.PY] Gathering system data for {hostname}")
         data["system"] = self.system()
+
+        print(f"✅ [SNMP_INFO.PY] Completed everything() for {hostname}")
+        print(f"📊 [SNMP_INFO.PY] Final data structure: {list(data.keys())}")
 
         # Return
         return data
@@ -74,6 +90,8 @@ class Query:
         vendor = iana_enterprise.Query(sysobjectid=sysobjectid)
         data["IANAEnterpriseNumber"] = vendor.enterprise()
 
+        print(f"📝 [SNMP_INFO.PY] Misc data: host={data['host']}, vendor={data['IANAEnterpriseNumber']}")
+
         # Return
         return data
 
@@ -90,20 +108,38 @@ class Query:
         # Initialize data
         data = defaultdict(lambda: defaultdict(dict))
         processed = False
+        hostname = self.snmp_object.hostname()
+
+        print(f"🖥️  [SNMP_INFO.PY] Starting system() queries for {hostname}")
 
         # Get system information from SNMPv2-MIB, ENTITY-MIB, IF-MIB
         # Instantiate a query object for each system query
-        for item in [
-            Query(self.snmp_object) for Query in get_queries("system")
-        ]:
+        system_queries = get_queries("system")
+        print(f"🔍 [SNMP_INFO.PY] Found {len(system_queries)} system MIB classes for {hostname}")
+
+        for i, Query in enumerate(system_queries):
+            item = Query(self.snmp_object)
+            mib_name = item.__class__.__name__
+            print(f"  🧪 [SNMP_INFO.PY] Testing MIB {i+1}/{len(system_queries)}: {mib_name} for {hostname}")
+            
             if item.supported():
+                print(f"  ✅ [SNMP_INFO.PY] MIB {mib_name} is SUPPORTED for {hostname}")
                 processed = True
+                old_keys = list(data.keys())
                 data = _add_system(item, data)
+                new_keys = list(data.keys())
+                added_keys = set(new_keys) - set(old_keys)
+                print(f"  📊 [SNMP_INFO.PY] MIB {mib_name} added: {list(added_keys)}")
+            else:
+                print(f"  ❌ [SNMP_INFO.PY] MIB {mib_name} is NOT supported for {hostname}")
 
         # Return
         if processed is True:
+            print(f"✅ [SNMP_INFO.PY] System data collected successfully for {hostname}")
+            print(f"📊 [SNMP_INFO.PY] System MIBs found: {list(data.keys())}")
             return data
         else:
+            print(f"❌ [SNMP_INFO.PY] No system MIBs supported for {hostname}")
             return None
 
     def layer1(self):
@@ -119,20 +155,32 @@ class Query:
         # Initialize key values
         data = defaultdict(lambda: defaultdict(dict))
         processed = False
+        hostname = self.snmp_object.hostname()
+
+        print(f"📊 [SNMP_INFO.PY] Starting layer1() queries for {hostname}")
 
         # Get information layer1 queries
+        layer1_queries = get_queries("layer1")
+        print(f"🔍 [SNMP_INFO.PY] Found {len(layer1_queries)} layer1 MIB classes for {hostname}")
 
-        for item in [
-            Query(self.snmp_object) for Query in get_queries("layer1")
-        ]:
+        for i, Query in enumerate(layer1_queries):
+            item = Query(self.snmp_object)
+            mib_name = item.__class__.__name__
+            print(f"  🧪 [SNMP_INFO.PY] Testing layer1 MIB {i+1}/{len(layer1_queries)}: {mib_name} for {hostname}")
+            
             if item.supported():
+                print(f"  ✅ [SNMP_INFO.PY] Layer1 MIB {mib_name} is SUPPORTED for {hostname}")
                 processed = True
                 data = _add_layer1(item, data)
+            else:
+                print(f"  ❌ [SNMP_INFO.PY] Layer1 MIB {mib_name} is NOT supported for {hostname}")
 
         # Return
         if processed is True:
+            print(f"✅ [SNMP_INFO.PY] Layer1 data collected successfully for {hostname}")
             return data
         else:
+            print(f"❌ [SNMP_INFO.PY] No layer1 MIBs supported for {hostname}")
             return None
 
     def layer2(self):
@@ -148,18 +196,31 @@ class Query:
         # Initialize key variables
         data = defaultdict(lambda: defaultdict(dict))
         processed = False
+        hostname = self.snmp_object.hostname()
 
-        for item in [
-            Query(self.snmp_object) for Query in get_queries("layer2")
-        ]:
+        print(f"🔗 [SNMP_INFO.PY] Starting layer2() queries for {hostname}")
+
+        layer2_queries = get_queries("layer2")
+        print(f"🔍 [SNMP_INFO.PY] Found {len(layer2_queries)} layer2 MIB classes for {hostname}")
+
+        for i, Query in enumerate(layer2_queries):
+            item = Query(self.snmp_object)
+            mib_name = item.__class__.__name__
+            print(f"  🧪 [SNMP_INFO.PY] Testing layer2 MIB {i+1}/{len(layer2_queries)}: {mib_name} for {hostname}")
+            
             if item.supported():
+                print(f"  ✅ [SNMP_INFO.PY] Layer2 MIB {mib_name} is SUPPORTED for {hostname}")
                 processed = True
                 data = _add_layer2(item, data)
+            else:
+                print(f"  ❌ [SNMP_INFO.PY] Layer2 MIB {mib_name} is NOT supported for {hostname}")
 
         # Return
         if processed is True:
+            print(f"✅ [SNMP_INFO.PY] Layer2 data collected successfully for {hostname}")
             return data
         else:
+            print(f"❌ [SNMP_INFO.PY] No layer2 MIBs supported for {hostname}")
             return None
 
     def layer3(self):
@@ -279,13 +340,23 @@ def _add_system(query, data):
 
     """
     # Process query
+    mib_name = query.__class__.__name__
+    print(f"  🔧 [SNMP_INFO.PY] Processing system data from {mib_name}")
+    
     result = query.system()
 
-    # Add tag
-    for primary in result.keys():
-        for secondary in result[primary].keys():
-            for tertiary, value in result[primary][secondary].items():
-                data[primary][secondary][tertiary] = value
+    if result:
+        print(f"  📊 [SNMP_INFO.PY] {mib_name} returned system data with keys: {list(result.keys())}")
+        
+        # Add tag
+        for primary in result.keys():
+            for secondary in result[primary].keys():
+                for tertiary, value in result[primary][secondary].items():
+                    data[primary][secondary][tertiary] = value
+                    
+        print(f"  ✅ [SNMP_INFO.PY] Successfully added {mib_name} system data")
+    else:
+        print(f"  ❌ [SNMP_INFO.PY] {mib_name} returned no system data")
 
     # Return
     return data

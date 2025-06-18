@@ -1,4 +1,4 @@
-"""Switchmap-NG poll modulre.
+"""Switchmap-NG poll module.
 
 Updates the database with device SNMP data.
 
@@ -45,12 +45,17 @@ def devices(multiprocessing=False):
     # Create a list of polling objects
     zones = sorted(config.zones())
 
+    print(f"🚀 [POLL.PY] Starting polling for {len(zones)} zones")
+
     # Create a list of arguments
     for zone in zones:
+        print(f"📍 [POLL.PY] Zone: {zone.name} has {len(zone.hostnames)} hosts")
         arguments.extend(
             _META(zone=zone.name, hostname=_, config=config)
             for _ in zone.hostnames
         )
+
+    print(f"🎯 [POLL.PY] Total devices to poll: {len(arguments)}")
 
     # Process the data
     if bool(multiprocessing) is False:
@@ -80,6 +85,8 @@ def device(poll, post=True):
     zone = poll.zone
     config = poll.config
 
+    print(f"🔥 [POLL.PY] Starting poll for {hostname} in zone {zone}")
+
     # Do nothing if the skip file exists
     skip_file = files.skip_file(AGENT_POLLER, config)
     if os.path.isfile(skip_file) is True:
@@ -95,22 +102,44 @@ shutdown request was probably requested""".format(
     if bool(hostname) is True:
         if isinstance(hostname, str) is True:
             if hostname.lower() != "none":
+                print(f"📡 [POLL.PY] Creating SNMP poller for {hostname}")
                 poll = poller.Poll(hostname)
+                
+                print(f"⚡ [POLL.PY] Querying SNMP data from {hostname}")
                 snmp_data = poll.query()
 
                 # Process if we get valid data
                 if bool(snmp_data) and isinstance(snmp_data, dict):
+                    print(f"✅ [POLL.PY] Got SNMP data from {hostname}")
+                    print(f"📊 [POLL.PY] Data keys: {list(snmp_data.keys())}")
+                    
+                    # Show system info if available
+                    if 'system' in snmp_data and snmp_data['system']:
+                        if 'SNMPv2-MIB' in snmp_data['system']:
+                            sys_data = snmp_data['system']['SNMPv2-MIB']
+                            print(f"🖥️  [POLL.PY] System Info for {hostname}:")
+                            print(f"    - Name: {sys_data.get('sysName', {}).get(0, 'N/A')}")
+                            print(f"    - Description: {sys_data.get('sysDescr', {}).get(0, 'N/A')[:50]}...")
+                            print(f"    - Uptime: {sys_data.get('sysUpTime', {}).get(0, 'N/A')}")
+
                     # Process device data
+                    print(f"🔧 [POLL.PY] Processing device data for {hostname}")
                     _device = udevice.Device(snmp_data)
                     data = _device.process()
                     data["misc"]["zone"] = zone
 
+                    print(f"📤 [POLL.PY] Processed data keys: {list(data.keys())}")
+
                     if bool(post) is True:
+                        print(f"🚀 [POLL.PY] Posting data to API for {hostname}")
                         # Update the database tables with polled data
                         rest.post(API_POLLER_POST_URI, data, config)
+                        print(f"✅ [POLL.PY] Successfully posted data for {hostname}")
                     else:
+                        print(f"📋 [POLL.PY] Printing data for {hostname} (no post)")
                         pprint(data)
                 else:
+                    print(f"❌ [POLL.PY] No valid data received from {hostname}")
                     log_message = """\
 Device {} returns no data. Check your connectivity and/or SNMP configuration\
 """.format(

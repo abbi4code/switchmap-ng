@@ -64,8 +64,8 @@ def main():
         )
         oui.insert_row(
             IOui(
-                oui=None,
-                organization=None,
+                oui="000000",
+                organization="UNKNOWN",
                 enabled=1,
             )
         )

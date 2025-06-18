@@ -91,16 +91,27 @@ class Snmpv2Query(Query):
         final = {}
         getvalues = [0]
         key = 0
+        hostname = self.snmp_object.hostname()
+
+        print(f"    🖥️  [SNMPv2-MIB] Starting system data collection for {hostname}")
 
         # Process
         oidroot = ".1.3.6.1.2.1.1"
+        oid_names = ["sysDescr", "sysObjectID", "sysUpTime", "sysContact", "sysName", "sysLocation"]
+        
         for node in range(1, 7):
             oid = "{}.{}.0".format(oidroot, node)
+            oid_name = oid_names[node-1]
+            print(f"    📡 [SNMPv2-MIB] Polling {oid_name} ({oid}) for {hostname}")
+            
             results = self.snmp_object.get(oid, normalized=True)
             for value in results.values():
                 getvalues.append(value)
+                print(f"    ✅ [SNMPv2-MIB] Got {oid_name}: {str(value)[:50]}...")
 
         # Assign values
+        print(f"    🔧 [SNMPv2-MIB] Processing collected system data for {hostname}")
+        
         data_dict["sysDescr"][key] = general.cleanstring(
             getvalues[1].decode("utf-8")
         )
@@ -110,6 +121,12 @@ class Snmpv2Query(Query):
         data_dict["sysName"][key] = getvalues[5].decode("utf-8")
         data_dict["sysLocation"][key] = getvalues[6].decode("utf-8")
 
+        print(f"    📊 [SNMPv2-MIB] System data summary for {hostname}:")
+        print(f"      - sysName: {data_dict['sysName'][key]}")
+        print(f"      - sysDescr: {data_dict['sysDescr'][key][:50]}...")
+        print(f"      - sysUpTime: {data_dict['sysUpTime'][key]} centiseconds")
+
         # Return
         final["SNMPv2-MIB"] = data_dict
+        print(f"    ✅ [SNMPv2-MIB] Completed system data collection for {hostname}")
         return final

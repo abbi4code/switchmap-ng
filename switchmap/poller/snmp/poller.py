@@ -33,10 +33,13 @@ class Poll:
             None
 
         """
+        # 
         # Initialize key variables
         self._server_config = ConfigPoller()
         self._hostname = hostname
         self._snmp_object = None
+
+        print(f"🔧 [POLLER.PY] Initializing SNMP poller for {hostname}")
 
         # Get snmp configuration information from Switchmap-NG
         validate = snmp_manager.Validate(
@@ -47,8 +50,11 @@ class Poll:
         )
         authorization = validate.credentials()
 
+        print(f"🔑 [POLLER.PY] Got SNMP credentials for {hostname}: {bool(authorization)}")
+
         # Create an SNMP object for querying
         if _do_poll(authorization) is True:
+            print(f"✅ [POLLER.PY] Creating SNMP interaction object for {hostname}")
             self._snmp_object = snmp_manager.Interact(
                 POLL(
                     hostname=hostname,
@@ -56,6 +62,7 @@ class Poll:
                 )
             )
         else:
+            print(f"❌ [POLLER.PY] Cannot create SNMP object for {hostname}")
             log_message = (
                 "Uncontactable or disabled host {}, or no valid SNMP "
                 "credentials found for it.".format(self._hostname)
@@ -75,8 +82,11 @@ class Poll:
         # Initialize key variables
         _data = None
 
+        print(f"📡 [POLLER.PY] Starting query for {self._hostname}")
+
         # Only query if wise
         if bool(self._snmp_object) is False:
+            print(f"❌ [POLLER.PY] No valid SNMP object for {self._hostname}")
             return _data
 
         # Get data
@@ -86,9 +96,19 @@ Querying topology data from host {}.""".format(
         )
         log.log2info(1078, log_message)
 
+        print(f"🔍 [POLLER.PY] Creating snmp_info.Query object for {self._hostname}")
         # Return the data polled from the device
         status = snmp_info.Query(self._snmp_object)
+        
+        print(f"🚀 [POLLER.PY] Calling everything() to gather all MIB data for {self._hostname}")
         _data = status.everything()
+        
+        if _data:
+            print(f"✅ [POLLER.PY] Query successful for {self._hostname}")
+            print(f"📊 [POLLER.PY] Collected data categories: {list(_data.keys())}")
+        else:
+            print(f"❌ [POLLER.PY] Query failed for {self._hostname}")
+        
         return _data
 
 
