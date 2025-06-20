@@ -33,7 +33,7 @@ class Poll:
             None
 
         """
-        # 
+        # *  we take the hostname (like from each device we already sepearted then we just callling )
         # Initialize key variables
         self._server_config = ConfigPoller()
         self._hostname = hostname
@@ -48,6 +48,7 @@ class Poll:
                 authorizations=self._server_config.snmp_auth(),
             )
         )
+        #! here this authorization have all the creds 
         authorization = validate.credentials()
 
         print(f"🔑 [POLLER.PY] Got SNMP credentials for {hostname}: {bool(authorization)}")
@@ -61,6 +62,7 @@ class Poll:
                     authorization=authorization,
                 )
             )
+            print(f"chekcinggggggggggg ❤️, {self._snmp_object}")
         else:
             print(f"❌ [POLLER.PY] Cannot create SNMP object for {hostname}")
             log_message = (

@@ -161,10 +161,13 @@ class Query:
 
         # Get information layer1 queries
         layer1_queries = get_queries("layer1")
+
+        # print(f"🔥 level1_queries: {layer1_queries}")
         print(f"🔍 [SNMP_INFO.PY] Found {len(layer1_queries)} layer1 MIB classes for {hostname}")
 
         for i, Query in enumerate(layer1_queries):
             item = Query(self.snmp_object)
+            print(f"🔥item: {item} && snmp_object: {self.snmp_object}")
             mib_name = item.__class__.__name__
             print(f"  🧪 [SNMP_INFO.PY] Testing layer1 MIB {i+1}/{len(layer1_queries)}: {mib_name} for {hostname}")
             

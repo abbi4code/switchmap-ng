@@ -42,18 +42,25 @@ class Validate:
         # Initialize key variables
         cache_exists = False
 
-        #! so here we are caching those SNMP_groups from the config file, so we have to take them for every device, as for every device we need to creds to authenticate
-        #! instead we store them in cache, if cache not found only then we go back to config and get back those creds
-
-        # Create cache directory / file if not yet created
+      
+        # ! Create cache directory / file if not yet created
         filename = files.snmp_file(self._options.hostname, ConfigPoller())
         if os.path.exists(filename) is True:
             cache_exists = True
+        
+        #! so here we are caching those SNMP_groups from the config file, so we have to take them for every device, as for every device we need to creds to authenticate
+
+        # !Every time switchmap polls a device, it would try ALL SNMP credential groups from the config file
+
+        #! instead we store them in cache, if cache not found only then we go back to config and get back those creds
 
         # Create file if necessary
         if cache_exists is False:
             # Get credentials
             authentication = self.validation()
+            print(f"🔥 authentication: {authentication}")
+
+            #! once we get the creds we store them in cache that we created just before
 
             # Save credentials if successful
             if bool(authentication):
@@ -320,8 +327,8 @@ class Interact:
             oid_to_get,
             get=False,
             check_reachability=True,
-            check_existence=True,
             context_name=context_name,
+            check_existence=True,
         )
 
         # If we get no result, then override validity
@@ -506,7 +513,7 @@ class Interact:
                 if self._poll.authorization.version != 1:
                     # Bulkwalk for SNMPv2 and SNMPv3
                     results = session.bulkwalk(
-                        oid_to_get, non_repeaters=0, max_repetitions=5
+                        oid_to_get, non_repeaters=0, max_repetitions=25
                     )
                 else:
                     # Bulkwalk not supported in SNMPv1
@@ -629,8 +636,6 @@ class _Session:
                 remote_port=self._poll.authorization.port,
                 use_numeric=True,
                 context=self._context_name,
-                timeout=0.5,
-                retries=1,
             )
         else:
             session = easysnmp.Session(
@@ -645,8 +650,6 @@ class _Session:
                 privacy_password=self._poll.authorization.privpassword,
                 auth_protocol=self._auth_protocol(),
                 auth_password=self._poll.authorization.authpassword,
-                timeout=0.5,
-                retries=1,
             )
 
         # Return
